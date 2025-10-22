@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulador de Mídias Pagas — JBiz</title>
+  <style>
+    :root{
+      --jbiz-blue:#0b63ff; /* cor principal seguindo o logo */
+      --bg:#f7f8fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --glass: rgba(255,255,255,0.6);
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#ffffff);color:#111827}
+    .container{max-width:980px;margin:36px auto;padding:24px}
+
+    header{display:flex;align-items:center;gap:18px;margin-bottom:18px}
+    .logo{width:86px;height:86px;display:flex;align-items:center;justify-content:center;background:var(--jbiz-blue);border-radius:12px;box-shadow:0 6px 18px rgba(11,99,255,0.12);padding:8px}
+    .logo img{max-width:100%;max-height:100%;filter:brightness(1.08);}
+    .title{font-size:20px;font-weight:700}
+    .subtitle{color:var(--muted);font-size:13px}
+
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(15,23,42,0.06);transition:transform .18s ease, box-shadow .18s ease}
+    .card:hover{transform:translateY(-4px)}
+
+    .inputs{display:grid;gap:12px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    .field{display:flex;gap:10px;align-items:center}
+    input[type=number], input[type=text], select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
+    .row{display:flex;gap:12px}
+    .row .col{flex:1}
+
+    .calc-box{display:flex;flex-direction:column;gap:12px}
+
+    .results{display:flex;flex-direction:column;gap:10px}
+    .stat{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(11,99,255,0.04), rgba(11,99,255,0.02));}
+    .stat strong{font-size:16px}
+    .muted{color:var(--muted);font-size:13px}
+
+    .feedback{margin-top:12px;padding:12px;border-radius:10px;background:linear-gradient(90deg,#f1f5ff,#ffffff);border:1px solid rgba(11,99,255,0.06)}
+
+    .footer-note{font-size:13px;color:var(--muted);margin-top:8px}
+
+    .toggles{display:flex;gap:10px;align-items:center}
+    .small{font-size:12px;color:var(--muted)}
+
+    .actions{display:flex;gap:8px;margin-top:12px}
+    button{background:var(--jbiz-blue);color:white;padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600}
+    button.ghost{background:transparent;color:var(--jbiz-blue);border:1px solid rgba(11,99,255,0.12)}
+
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+
+    /* responsive */
+    @media(max-width:920px){.grid{grid-template-columns:1fr;}.logo{width:62px;height:62px}}
+
+    /* subtle animations */
+    .stat, .card{transition:transform .22s cubic-bezier(.2,.9,.3,1), box-shadow .22s ease}
+    .value{font-size:18px;font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo"><img src="/mnt/data/imgi_1_343293685_3455021051446070_7624439905933595638_n.png" alt="Jbiz logo"/></div>
+      <div>
+        <div class="title">Simulador de Mídias Pagas — Alinhamento de Expectativas</div>
+        <div class="subtitle">Preencha as métricas para estimar leads, vendas, faturamento e ROAS. Valores atualizam automaticamente.</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:8px">Entradas</div>
+        <div class="inputs">
+          <div>
+            <label>Custo por Lead (R$) — nicho B2B (padrão 15–20)</label>
+            <input id="cpl" type="number" min="0" step="0.01" value="18">
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>Investimento total (R$)</label>
+              <input id="investment" type="number" min="0" step="0.01" value="5000">
+            </div>
+            <div class="col">
+              <label>Ticket médio (R$)</label>
+              <input id="ticket" type="number" min="0" step="0.01" value="250">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="flex:1">
+              <label><input id="useSimple" type="checkbox" checked> Usar conversão simples (rápido)</label>
+              <div class="small">Se ativado: somente informe % de vendas (ex: 10%). Se desativado: informe Taxa de qualificação e de fechamento.</div>
+            </div>
+          </div>
+
+          <div id="simpleConversionRow">
+            <label>% de Conversão (leads → vendas)</label>
+            <input id="simpleConv" type="number" min="0" max="100" step="0.1" value="10">
+          </div>
+
+          <div id="advancedRow" style="display:none">
+            <div class="row">
+              <div class="col">
+                <label>Taxa de qualificação (%)</label>
+                <input id="qualRate" type="number" min="0" max="100" step="0.1" value="20">
+              </div>
+              <div class="col">
+                <label>Taxa de fechamento dos qualificados (%)</label>
+                <input id="closeRate" type="number" min="0" max="100" step="0.1" value="30">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label>Número de vendas (pode editar manualmente)</label>
+            <input id="numSales" type="number" min="0" step="1" value="0">
+            <div class="small">Se editar manualmente, a % de conversão será atualizada automaticamente.</div>
+          </div>
+
+          <div class="actions">
+            <button id="calcBtn">Recalcular</button>
+            <button class="ghost" id="resetBtn">Resetar valores</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:8px">Resultados</div>
+        <div class="calc-box">
+          <div class="results">
+            <div class="stat"><div class="muted">Estimativa de leads</div><div class="value" id="leads">0</div></div>
+            <div class="stat"><div class="muted">Número de vendas</div><div class="value" id="sales">0</div></div>
+            <div class="stat"><div class="muted">Valor total de vendas (R$)</div><div class="value" id="revenue">R$ 0,00</div></div>
+            <div class="stat"><div class="muted">ROAS (Receita / Invest.)</div><div class="value" id="roas">0x</div></div>
+            <div class="stat"><div class="muted">% Conversão efetiva</div><div class="value" id="effectiveConv">0%</div></div>
+          </div>
+
+          <div class="feedback" id="feedback">
+            <div style="font-weight:700">Feedback automático</div>
+            <div id="feedbackText" class="muted">Preencha os campos e clique em Recalcular para receber o feedback.</div>
+          </div>
+
+          <div class="footer-note">Dica: o crescimento é alcançado combinando aumento do investimento com melhoria das taxas (redução do CPL, aumento da qualificação e da taxa de fechamento) e aumento do ticket médio.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Jbiz — Simulador rápido para alinhamento de expectativas em reuniões comerciais.</footer>
+  </div>
+
+  <script>
+    // util
+    const fmt = (v)=>{return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}    
+    const el = id=>document.getElementById(id);
+
+    // elements
+    const cpl = el('cpl');
+    const investment = el('investment');
+    const ticket = el('ticket');
+    const useSimple = el('useSimple');
+    const simpleConv = el('simpleConv');
+    const qualRate = el('qualRate');
+    const closeRate = el('closeRate');
+    const numSales = el('numSales');
+
+    const leadsOut = el('leads');
+    const salesOut = el('sales');
+    const revenueOut = el('revenue');
+    const roasOut = el('roas');
+    const effOut = el('effectiveConv');
+    const feedbackText = el('feedbackText');
+
+    const advancedRow = el('advancedRow');
+    const simpleRow = el('simpleConversionRow');
+
+    function calculate(fromManual=false){
+      const cplV = parseFloat(cpl.value) || 0;
+      const invV = parseFloat(investment.value) || 0;
+      const ticketV = parseFloat(ticket.value) || 0;
+
+      const leads = cplV>0 ? Math.floor(invV / cplV) : 0;
+
+      let sales = 0;
+      let effConv = 0;
+
+      if(useSimple.checked){
+        const sc = parseFloat(simpleConv.value) || 0;
+        sales = Math.floor(leads * (sc/100));
+        effConv = leads>0 ? (sales / leads)*100 : 0;
+      } else {
+        const q = parseFloat(qualRate.value) || 0;
+        const c = parseFloat(closeRate.value) || 0;
+        sales = Math.floor(leads * (q/100) * (c/100));
+        effConv = (q/100)*(c/100)*100; // efetiva em %
+      }
+
+      // if user manually edited number of sales, use that and update effective conv
+      if(fromManual){
+        const manual = parseInt(numSales.value) || 0;
+        if(manual>=0){
+          sales = manual;
+          effConv = leads>0 ? (sales / leads)*100 : 0;
+          // update simpleConv to reflect
+          simpleConv.value = (effConv).toFixed(2);
+          // if in advanced mode, try to distribute into qual/close keeping product the same
+          if(!useSimple.checked){
+            // preserve closeRate, adjust qualRate to match observed effConv (approx)
+            const c = parseFloat(closeRate.value) || 0.0001;
+            const newQ = (effConv / (c||0.0001))*1.0;
+            qualRate.value = Math.max(0,Math.min(100,newQ)).toFixed(2);
+          }
+        }
+      } else {
+        // write computed sales into field
+        numSales.value = sales;
+      }
+
+      const revenue = sales * ticketV;
+      const roas = invV>0 ? (revenue / invV) : 0;
+
+      // update UI
+      leadsOut.textContent = leads.toLocaleString('pt-BR');
+      salesOut.textContent = sales.toLocaleString('pt-BR');
+      revenueOut.textContent = fmt(revenue);
+      roasOut.textContent = roas.toFixed(2) + 'x';
+      effOut.textContent = effConv.toFixed(2) + '%';
+
+      // feedback logic
+      let fb = '';
+      if(invV<=0){ fb = 'Informe um investimento maior que zero para simular resultados.'; }
+      else if(leads===0){ fb = 'Com o CPL informado e o investimento atual, não há geração estimada de leads. Considere reduzir o CPL ou aumentar o investimento.'; }
+      else {
+        // messages based on ROAS and CPL
+        if(roas < 0.8){
+          fb = 'Retorno fraco (ROAS menor que 0.8x). Recomendado: revisar criativos, oferta e reduzir o CPL antes de escalar o investimento.';
+        } else if(roas < 1.5){
+          fb = 'Retorno moderado. Foque em aumentar a taxa de conversão e qualificação de leads, e considerar aumento gradual do ticket médio.';
+        } else if(roas < 3){
+          fb = 'Bom retorno. Você pode testar aumento gradual do investimento enquanto mantém otimizações para reduzir CPL.';
+        } else {
+          fb = 'Ótimo retorno (ROAS alto). Cenário favorável para escalar investimento e capturar participação de mercado. Continue otimizando para reduzir CPL e aumentar ticket.';
+        }
+
+        // tips based on CPL and conversion
+        const cplTip = cplV > 25 ? 'CPL está alto para B2B — investir em otimização de campanhas e segmentação pode reduzir esse custo.' : '';
+        const convTip = parseFloat(effConv) < 3 ? 'Taxa de conversão efetiva baixa — alinhe o time comercial e melhore nutrição/qualificação.' : '';
+        fb += (cplTip? '\n' + cplTip : '') + (convTip? '\n' + convTip : '');
+      }
+
+      feedbackText.textContent = fb;
+    }
+
+    // events
+    document.querySelectorAll('#cpl,#investment,#ticket,#simpleConv,#qualRate,#closeRate').forEach(i=>{
+      i.addEventListener('input',()=>calculate(false));
+    });
+
+    useSimple.addEventListener('change',()=>{
+      if(useSimple.checked){ simpleRow.style.display='block'; advancedRow.style.display='none'; }
+      else{ simpleRow.style.display='none'; advancedRow.style.display='block'; }
+      calculate(false);
+    });
+
+    numSales.addEventListener('input',()=>{ calculate(true); });
+
+    el('calcBtn').addEventListener('click',(e)=>{ e.preventDefault(); calculate(false); el('calcBtn').animate([{transform:'scale(1)'},{transform:'scale(.98)'},{transform:'scale(1)'}],{duration:220}); });
+    el('resetBtn').addEventListener('click',(e)=>{ e.preventDefault(); cpl.value=18; investment.value=5000; ticket.value=250; simpleConv.value=10; qualRate.value=20; closeRate.value=30; numSales.value=0; useSimple.checked=true; simpleRow.style.display='block'; advancedRow.style.display='none'; calculate(false); });
+
+    // initial calc
+    calculate(false);
+  </script>
+</body>
+</html>
